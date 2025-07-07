@@ -12,9 +12,9 @@
 
 *MENTOR*: NEELA SANTOSH
 
-#### *Task Description: Real-Time Chat Application*
+## *Task Description: Real-Time Chat Application*
 
-## *1. What the Task Is*
+*1. What the Task Is*
 
 This task involves the development of a *Real-Time Chat Application*—a web-based communication platform that allows users to send and receive messages instantly in a interactive interface. The application enables real-time, bi-directional communication between multiple users using web sockets, modern messaging platforms like WhatsApp Web.
 
@@ -22,7 +22,7 @@ The objective of the task is to build a communication tool that provides fast, i
 
 This project not only demonstrates front-end development skills but also incorporates backend development and server-client communication, making it a full-stack project with real-world utility.
 
-## *2. Tools and Technologies Used*
+*2. Tools and Technologies Used*
 
 To develop this application, the following tools, frameworks, and technologies were utilized:
 
@@ -42,7 +42,7 @@ To develop this application, the following tools, frameworks, and technologies w
 * *Visual Studio Code (VS Code)* – used for coding, testing, and project organization.
 * *Git & GitHub* – for version control, collaboration, and code backup.
 
-## *3. Source of the Code*
+*3. Source of the Code*
 
 The application was built using a combination of:
 
@@ -53,7 +53,7 @@ The application was built using a combination of:
   * GeeksforGeeks
   * Chatgpt 
 
-## *4. Application and Real-World Use Cases*
+*4. Application and Real-World Use Cases*
 
 This Real-Time Chat Application can be applied across various real-world scenarios, including:
 
@@ -65,7 +65,7 @@ This Real-Time Chat Application can be applied across various real-world scenari
 
 The application is scalable and modular, making it easy to integrate with authentication systems, databases, and additional features like file uploads or voice/video calling in the future.
 
-Conclusion:
+*Conclusion:*
 
 By completing this task, essential skills in real-time programming, client-server architecture, and event-driven development were practiced. This project not only strengthens understanding of frontend and backend communication but also simulates the structure of modern messaging apps used daily by millions.
 
