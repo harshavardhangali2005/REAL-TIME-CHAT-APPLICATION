@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Chat App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        .message-animation {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-indigo-600 text-white p-4 shadow-md">
+            <div class="container mx-auto flex justify-between items-center">
+                <h1 class="text-2xl font-bold">Vue Chat</h1>
+                <div v-if="username" class="flex items-center space-x-2">
+                    <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                    <span>{{ username }}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Username Modal -->
+        <div v-if="!username" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+                <h2 class="text-2xl font-bold mb-4 text-gray-800">Welcome to Vue Chat</h2>
+                <img src="https://placehold.co/600x200" alt="Illustration of people chatting in bubbles with modern flat design style" class="mb-4 rounded-lg" />
+                <div class="mb-4">
+                    <label for="username" class="block text-gray-700 mb-2">Enter your username</label>
+                    <input 
+                        v-model="tempUsername" 
+                        @keyup.enter="setUsername" 
+                        type="text" 
+                        id="username" 
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                        placeholder="Type your username here">
+                </div>
+                <button 
+                    @click="setUsername"
+                    class="w-full bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition font-medium">
+                    Join Chat
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div v-if="username" class="flex-1 container mx-auto p-4 flex flex-col h-full">
+            <!-- Chat Messages -->
+            <div class="flex-1 overflow-y-auto scrollbar-thin mb-4 bg-white rounded-lg shadow-sm p-4">
+                <div v-for="(message, index) in messages" :key="index" class="mb-4 message-animation">
+                    <div v-if="message.type === 'notification'" class="text-center text-gray-500 text-sm mb-2">
+                        {{ message.content }}
+                    </div>
+                    <div v-else class="flex" :class="{'justify-end': message.username === username}">
+                        <div class="max-w-xs lg:max-w-md" :class="{'bg-indigo-100': message.username !== username, 'bg-indigo-600 text-white': message.username === username}">
+                            <div class="p-3 rounded-lg">
+                                <div v-if="message.username !== username" class="font-semibold text-indigo-800 mb-1">{{ message.username }}</div>
+                                <div :class="{'text-indigo-900': message.username !== username, 'text-white': message.username === username}">{{ message.content }}</div>
+                                <div class="text-xs mt-1" :class="{'text-indigo-500': message.username !== username, 'text-indigo-200': message.username === username}">
+                                    {{ formatTime(message.timestamp) }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Message Input -->
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <div class="flex space-x-2">
+                    <input 
+                        v-model="newMessage" 
+                        @keyup.enter="sendMessage"
+                        type="text" 
+                        class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                        placeholder="Type your message here...">
+                    <button 
+                        @click="sendMessage"
+                        class="bg-indigo-600 text-white py-2 px-4 rounded-lg hover:bg-indigo-700 transition font-medium">
+                        Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const socket = io();
+                const username = ref('');
+                const tempUsername = ref('');
+                const newMessage = ref('');
+                const messages = ref([]);
+                const usersOnline = ref(0);
+
+                const setUsername = () => {
+                    if (tempUsername.value.trim()) {
+                        username.value = tempUsername.value.trim();
+                        socket.emit('new-user', username.value);
+                    }
+                };
+
+                const sendMessage = () => {
+                    if (newMessage.value.trim() && username.value) {
+                        const message = {
+                            username: username.value,
+                            content: newMessage.value.trim(),
+                            timestamp: new Date()
+                        };
+                        socket.emit('send-chat-message', message);
+                        messages.value.push({
+                            ...message,
+                            type: 'message'
+                        });
+                        newMessage.value = '';
+                        scrollToBottom();
+                    }
+                };
+
+                const formatTime = (date) => {
+                    return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                };
+
+                const scrollToBottom = () => {
+                    setTimeout(() => {
+                        const chatContainer = document.querySelector('.overflow-y-auto');
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }, 50);
+                };
+
+                onMounted(() => {
+                    socket.on('chat-message', (message) => {
+                        messages.value.push({
+                            username: message.username,
+                            content: message.content,
+                            timestamp: message.timestamp,
+                            type: 'message'
+                        });
+                        scrollToBottom();
+                    });
+
+                    socket.on('user-connected', (user) => {
+                        messages.value.push({
+                            content: `${user} joined the chat`,
+                            timestamp: new Date(),
+                            type: 'notification'
+                        });
+                        scrollToBottom();
+                    });
+
+                    socket.on('user-disconnected', (user) => {
+                        messages.value.push({
+                            content: `${user} left the chat`,
+                            timestamp: new Date(),
+                            type: 'notification'
+                        });
+                        scrollToBottom();
+                    });
+
+                    socket.on('users-count', (count) => {
+                        usersOnline.value = count;
+                    });
+                });
+
+                return {
+                    username,
+                    tempUsername,
+                    newMessage,
+                    messages,
+                    usersOnline,
+                    setUsername,
+                    sendMessage,
+                    formatTime
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
