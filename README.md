@@ -12,7 +12,7 @@
 
 *MENTOR*: NEELA SANTOSH
 
-##*Task Description: Real-Time Chat Application*
+##Task Description: Real-Time Chat Application*
 
 *1. What the Task Is*
 
